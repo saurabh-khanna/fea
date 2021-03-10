@@ -1,0 +1,85 @@
+---
+title: "FEA Randomization"
+author: "Saurabh Khanna"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: 4
+    number_sections: no
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE, echo = FALSE, fig.retina = 4)
+knitr::opts_chunk$set(fig.pos = 'H')
+```
+
+```{r}
+pacman::p_load(tidyverse, estimatr, janitor, texreg, compareGroups, readxl)
+
+df_stu <- read_xlsx("data/stu_baseline.xlsx")
+df_manager <- read_xlsx("data/manager.xlsx")
+
+df_stu %>% count(accepted)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+datalist = list()
+for (i in 1:20) {
+    dat <- df_stu
+    dat$i <- i
+    datalist[[i]] <- dat
+}
+
+df_stu_long <- bind_rows(datalist) %>% arrange(student_ID, i) %>% relocate(accepted, student_ID, i)
+```
+
+
+```{r}
+set.seed(0)
+
+df_stu_long %>% 
+  mutate(
+    i_new = if_else(i < 10, str_c("0", i), i %>% as.character()),
+    new_id = str_c(student_ID, i_new, sep = "_"),
+    rand = runif(19240)
+  ) %>% 
+  arrange(rand) %>% 
+  mutate(
+    j = row_number(),
+    assigned = 0,
+    assigned = if_else(j <= 6413, 1, assigned),
+  ) %>% 
+  relocate(new_id, rand, j, student_ID, i, assigned)
+
+
+
+19240/3
+```
+
