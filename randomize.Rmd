@@ -26,60 +26,173 @@ df_stu %>% count(accepted)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ```{r}
-datalist = list()
-for (i in 1:20) {
-    dat <- df_stu
-    dat$i <- i
-    datalist[[i]] <- dat
-}
-
-df_stu_long <- bind_rows(datalist) %>% arrange(student_ID, i) %>% relocate(accepted, student_ID, i)
+set.seed(11)
+df_stu_1_head <-
+  df_stu %>% 
+  filter(accepted == 1) %>%
+  arrange(student_ID) %>%
+  select(student_ID) %>% 
+  head(520) %>% 
+  mutate(
+    manager1 = row_number() %% 20,
+    manager1 = if_else(manager1 == 0, 20, manager1),
+    manager1 = sample(manager1),
+    manager2 = row_number() %% 20,
+    manager2 = if_else(manager2 == 0, 20, manager2),
+    manager2 = sample(manager2),
+    manager3 = row_number() %% 20,
+    manager3 = if_else(manager3 == 0, 20, manager3),
+    manager3 = sample(manager3)
+  ) %>%
+  mutate(
+    manager2 = if_else(
+      manager1 == manager2 | manager2 == manager3 | manager3 == manager1, 
+      (manager2 + sample.int(20, 1)) %% 20,
+      manager2
+    ),
+    manager3 = if_else(
+      manager1 == manager2 | manager2 == manager3 | manager3 == manager1, 
+      (manager3 + sample.int(20, 1)) %% 20,
+      manager3
+    ),
+    manager1 = if_else(
+      manager1 == manager2 | manager2 == manager3 | manager3 == manager1, 
+      (manager1 + sample.int(20, 1)) %% 20,
+      manager1
+    ),
+    manager1 = if_else(manager1 == 0, 20, manager1),
+    manager2 = if_else(manager2 == 0, 20, manager2),
+    manager3 = if_else(manager3 == 0, 20, manager3)
+  )
 ```
 
 
 ```{r}
-set.seed(0)
-
-df_stu_long %>% 
+set.seed(3)
+df_stu_1_tail <-
+  df_stu %>% 
+  filter(accepted == 1) %>%
+  arrange(student_ID) %>%
+  select(student_ID) %>% 
+  tail(6) %>% 
   mutate(
-    i_new = if_else(i < 10, str_c("0", i), i %>% as.character()),
-    new_id = str_c(student_ID, i_new, sep = "_"),
-    rand = runif(19240)
-  ) %>% 
-  arrange(rand) %>% 
-  mutate(
-    j = row_number(),
-    assigned = 0,
-    assigned = if_else(j <= 6413, 1, assigned),
-  ) %>% 
-  relocate(new_id, rand, j, student_ID, i, assigned)
-
-
-
-19240/3
+    manager1 = sample.int(20, 6),
+    manager2 = sample.int(20, 6),
+    manager3 = sample.int(20, 6),
+  )
 ```
+
+
+```{r}
+df_stu_1 <- bind_rows(df_stu_1_head, df_stu_1_tail)
+```
+
+
+```{r}
+set.seed(1)
+df_stu_0_head <-
+  df_stu %>% 
+  filter(accepted == 0) %>%
+  arrange(student_ID) %>%
+  select(student_ID) %>% 
+  head(420) %>% 
+  mutate(
+    manager1 = row_number() %% 20,
+    manager1 = if_else(manager1 == 0, 20, manager1),
+    manager1 = sample(manager1),
+    manager2 = row_number() %% 20,
+    manager2 = if_else(manager2 == 0, 20, manager2),
+    manager2 = sample(manager2),
+    manager3 = row_number() %% 20,
+    manager3 = if_else(manager3 == 0, 20, manager3),
+    manager3 = sample(manager3)
+  ) %>%
+  mutate(
+    manager2 = if_else(
+      manager1 == manager2 | manager2 == manager3 | manager3 == manager1, 
+      (manager2 + sample.int(20, 1)) %% 20,
+      manager2
+    ),
+    manager3 = if_else(
+      manager1 == manager2 | manager2 == manager3 | manager3 == manager1, 
+      (manager3 + sample.int(20, 1)) %% 20,
+      manager3
+    ),
+    manager1 = if_else(
+      manager1 == manager2 | manager2 == manager3 | manager3 == manager1, 
+      (manager1 + sample.int(20, 1)) %% 20,
+      manager1
+    ),
+    manager1 = if_else(manager1 == 0, 20, manager1),
+    manager2 = if_else(manager2 == 0, 20, manager2),
+    manager3 = if_else(manager3 == 0, 20, manager3)
+  )
+```
+
+
+```{r}
+set.seed(13)
+df_stu_0_tail <-
+  df_stu %>% 
+  filter(accepted == 0) %>%
+  arrange(student_ID) %>%
+  select(student_ID) %>% 
+  tail(16) %>% 
+  mutate(
+    manager1 = sample.int(20, 16),
+    manager2 = sample.int(20, 16),
+    manager3 = sample.int(20, 16),
+  )
+```
+
+
+```{r}
+df_stu_0 <- bind_rows(df_stu_0_head, df_stu_0_tail)
+```
+
+
+```{r}
+df_final <- 
+  bind_rows(df_stu_0, df_stu_1)
+```
+
+Final export:
+
+```{r}
+df_final %>%
+  pivot_longer(cols = contains("manager"), names_to = "name", values_to = "hrid") %>% 
+  select(hrid, student_ID) %>% 
+  arrange(hrid, student_ID) %>%
+  group_by(hrid) %>% 
+  mutate(
+    name = str_c("Student ", row_number())
+  ) %>% 
+  ungroup() %>% 
+  pivot_wider(names_from = name, values_from = student_ID) 
+  # writexl::write_xlsx("randomized_assignments_03.11.2021.xlsx")
+```
+
+
+Balance checks:
+
+```{r}
+df_final %>%
+  pivot_longer(cols = contains("manager"), names_to = "name", values_to = "hrid") %>% 
+  select(hrid, student_ID) %>% 
+  arrange(hrid, student_ID) %>%
+  group_by(hrid) %>% 
+  mutate(
+    name = str_c("Student ", row_number())
+  ) %>% 
+  ungroup() %>%
+  left_join(df_manager, by = "hrid") %>% 
+  left_join(df_stu, by = "student_ID") %>%
+  mutate(sector_experience = as_factor(sector_experience), gender_match = (gender.x == gender.y)) %>% 
+  rename(gender_manager = gender.x) %>% 
+  compareGroups::compareGroups(accepted ~ gender_manager + current_hm + gender_match, data = .) %>% 
+  createTable()
+```
+
+
 
