@@ -168,7 +168,7 @@ df_final %>%
   mutate(
     name = str_c("Student ", row_number())
   ) %>% 
-  ungroup() %>% 
+  ungroup() %>% count(student_ID)
   pivot_wider(names_from = name, values_from = student_ID) 
   # writexl::write_xlsx("randomized_assignments_03.11.2021.xlsx")
 ```
